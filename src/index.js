@@ -1,13 +1,9 @@
-import spriteImg from './sprite';
-import './index.scss';
-
 const gameEl = document.getElementById('js-solitaire');
 const dealPileEl = document.getElementById('js-deck-pile');
 const dealEl = document.getElementById('js-deck-deal');
-const finishContainerEl = document.getElementById('js-finish');
+const upperContainerEl = document.getElementById('js-upper');
 const deskContainerEl = document.getElementById('js-board');
 const deckPileEl = document.getElementById('js-deck-pile');
-const resetEl = document.getElementById('js-reset');
 
 const cardWidth = 71;
 const cardHeight = 96;
@@ -227,6 +223,13 @@ function dealCards() {
     }
 }
 
+function shuffleInPlace(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+}
+
 function resetGame() {
     // clear decks
     for (let i = 0; i < 7; i++) {
@@ -238,8 +241,8 @@ function resetGame() {
     state.deal.pile.cards = [];
     state.deal.deal.cards = [];
 
-    // randomise cards
-    state.cards.sort(() => (Math.random() < .5) ? -1 : 1);
+    // shuffle cards
+    shuffleInPlace(state.cards);
 
     // re-assign indexes
     requestAnimationFrame(() => {
@@ -247,8 +250,8 @@ function resetGame() {
             const { facingUp, el } = state.cards[i];
             state.deal.pile.cards.push(i);
 
-            el.onmousedown = captureMove(i);
-            el.onmouseup = releaseMove;
+            el.onpointerdown = captureMove(i);
+            el.onpointerup = releaseMove;
             el.onclick = handleClick(i);
 
             if (facingUp) {
@@ -331,7 +334,7 @@ function restartDeal() {
     }
 }
 
-function getMousePosition(event) {
+function getPointerPosition(event) {
     return {
         x: event.pageX,
         y: event.pageY
@@ -341,7 +344,7 @@ function getMousePosition(event) {
 const handleMove = event => {
     if (state.moving.capture) {
         const el = state.moving.element;
-        const { x, y } = getMousePosition(event);
+        const { x, y } = getPointerPosition(event);
 
         el.style.left = `${x - state.moving.offset.x}px`;
         el.style.top = `${y - state.moving.offset.y}px`;
@@ -350,7 +353,7 @@ const handleMove = event => {
 
 const startMovingPosition = event => {
     const el = state.moving.element;
-    const { x, y } = getMousePosition(event);
+    const { x, y } = getPointerPosition(event);
     const { top, left } = el.getBoundingClientRect();
     el.classList.add('card--moving');
 
@@ -442,7 +445,7 @@ const releaseMove = event => {
     clearTimeout(release);
     if (state.moving.capture) {
         release = setTimeout(() => {
-            const { x, y } = getMousePosition(event);
+            const { x, y } = getPointerPosition(event);
             requestAnimationFrame(() => {
                 dropCard(x, y);
 
@@ -544,22 +547,18 @@ const gameFinish = () => {
         if (l < 13) return;
     }
 
-    const { width, height, left, top } = gameEl.getBoundingClientRect();
-    win(width, height, left, top);
+    win();
 };
 
-window.win = () => {
-    const { width, height, left, top } = gameEl.getBoundingClientRect();
-    win(width, height, left, top);
-};
+const spritesheetImage = document.createElement('img');
+spritesheetImage.src = "./src/spritesheet.png";
 
-const win = (canvasWidth, canvasHeight, canvasLeft, canvasTop) => {
-    const image = document.createElement('img');
-    image.src = spriteImg;
+const win = () => {
+    const boundingRect = gameEl.getBoundingClientRect();
     const canvas = document.createElement('canvas');
     canvas.style.position = 'absolute';
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    canvas.width = boundingRect.width;
+    canvas.height = boundingRect.height;
     gameEl.appendChild(canvas);
 
     const context = canvas.getContext('2d');
@@ -568,7 +567,7 @@ const win = (canvasWidth, canvasHeight, canvasLeft, canvasTop) => {
 
     const drawCard = (x, y, spriteX, spriteY) => {
         context.drawImage(
-            image,
+            spritesheetImage,
             spriteX,
             spriteY,
             cardWidth,
@@ -582,8 +581,8 @@ const win = (canvasWidth, canvasHeight, canvasLeft, canvasTop) => {
 
     const Particle = function (id, x, y, sx, sy) {
         if (sx === 0) sx = 2;
-        const spriteX = ( id % 4 ) * cardWidth;
-        const spriteY = Math.floor(id / 4) * cardHeight;
+        const spriteX = Math.floor(id / 4) * cardWidth;
+        const spriteY = ( id % 4 ) * cardHeight;
 
         // initial position of the card
         drawCard(x, y, spriteX, spriteY);
@@ -635,9 +634,9 @@ const win = (canvasWidth, canvasHeight, canvasLeft, canvasTop) => {
     for (let i = 0; i < 4; i++) {
         const { left, top } = state.finish[i].el.getBoundingClientRect();
         throwInterval[i] = setInterval(function () {
-            throwCard(left - canvasLeft, top - canvasTop);
+            throwCard(left - boundingRect.left, top - boundingRect.top);
         }, 1000);
-        // throwCard(left - canvasLeft, top - canvasTop);
+        // throwCard(left - boundingRect.left, top - boundingRect.top);
     }
 
     const updateInterval = setInterval(function () {
@@ -661,11 +660,12 @@ const win = (canvasWidth, canvasHeight, canvasLeft, canvasTop) => {
 };
 
 function initSolitaire() {
-    // add sprite
-    const css = document.createElement('style');
-    const styles = `.card--front { background-image: url("${spriteImg}"); }`;
-    css.appendChild(document.createTextNode(styles));
-    document.head.appendChild(css);
+
+    const backStyleIndex = Math.floor(Math.random() * 12) + 1;
+    document.body.style.setProperty(
+        "--background-position-facing-down",
+        `${cardWidth * -backStyleIndex}px ${cardHeight * -4}px`
+    );
 
     // create all cards
     for (let i = 0; i < 4; i++) {
@@ -676,6 +676,11 @@ function initSolitaire() {
                 `card--${state.types[i]}-${j}`,
                 'card--back'
             );
+            el.style.setProperty(
+                "--background-position-facing-up",
+                `${cardWidth * -(j - 1)}px ${cardHeight * -i}px`
+            );
+
 
             state.cards.push({
                 el: el,
@@ -697,7 +702,7 @@ function initSolitaire() {
             el: el,
             cards: []
         });
-        finishContainerEl.appendChild(el);
+        upperContainerEl.appendChild(el);
     }
 
     // create desk decks
@@ -715,11 +720,11 @@ function initSolitaire() {
     }
 
     dealPileEl.onclick = restartDeal;
-    resetEl.onclick = resetGame;
-    window.onmousemove = handleMove;
-    window.onmouseup = releaseMove;
+    window.onpointermove = handleMove;
+    window.onpointerup = releaseMove;
 
     resetGame();
 }
 
 window.onload = initSolitaire;
+window.resetGame = resetGame;

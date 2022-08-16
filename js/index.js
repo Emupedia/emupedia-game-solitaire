@@ -551,7 +551,7 @@ const gameFinish = () => {
 };
 
 const spritesheetImage = document.createElement('img');
-spritesheetImage.src = "./src/spritesheet.png";
+spritesheetImage.src = '../images/spritesheet.png';
 
 const win = () => {
     const boundingRect = gameEl.getBoundingClientRect();

@@ -38,7 +38,7 @@ var menus = {
 			description: "Exit Solitaire",
 		}
 	],
-	"&Help": [
+	// "&Help": [
 		// {
 		// 	item: "&Help Topics",
 		// 	action: ()=> {
@@ -77,14 +77,14 @@ var menus = {
 		// 	description: "Help using help"
 		// },
 		// MENU_DIVIDER,
-		{
-			item: "&About Solitaire...",
-			action: ()=> {
-				window.open("https://github.com/1j01/98/tree/master/programs/js-solitaire");
-			},
-			description: "About Solitaire"
-		},
-	],
+		// {
+		// 	item: "&About Solitaire...",
+		// 	action: ()=> {
+		// 		window.open("https://github.com/1j01/98/tree/master/programs/js-solitaire");
+		// 	},
+		// 	description: "About Solitaire"
+		// },
+	// ],
 };
 
 var go_outside_frame = false;
